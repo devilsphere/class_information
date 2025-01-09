@@ -115,11 +115,18 @@
 			echo "<p>Error: Class '{$className}' does not exist.</p>";
 		}
 	} else {
+		// Get all declared classes
+		$declaredClasses = get_declared_classes();
 		?>
         <form method="POST" action="">
             <h1>Class Inspector</h1>
-            <p>Enter the name of the class to inspect:</p>
-            <input type="text" name="class_name" placeholder="Enter class name" required>
+            <p>Select a class to inspect:</p>
+            <select name="class_name" required>
+                <option value="" disabled selected>Choose a class</option>
+				<?php foreach ($declaredClasses as $class): ?>
+                    <option value="<?= htmlspecialchars($class) ?>"><?= htmlspecialchars($class) ?></option>
+				<?php endforeach; ?>
+            </select>
             <button type="submit">Check Class</button>
         </form>
 		<?php
