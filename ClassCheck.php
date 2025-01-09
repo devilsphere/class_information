@@ -1,7 +1,7 @@
 <?php
-	require 'vendor/autoload.php'; // Include Dompdf autoload if using Composer
 	
-	use Dompdf\Dompdf;
+	// Include FPDF
+	require_once __DIR__ . '/fpdf/fpdf.php';
 	
 	if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['class_name'])) {
 		$className = trim($_POST['class_name']);
@@ -10,80 +10,61 @@
 			try {
 				$reflection = new ReflectionClass($className);
 				
-				// Start capturing output to prepare it for saving or display
-				ob_start();
+				ob_start(); // Start capturing HTML output
 				
-				// Generate HTML content
+				// Generate HTML content for display
 				echo "<h1>{$className} Class Methods</h1>";
 				echo "<p>This document provides a comprehensive list of methods and their details for the {$className} class.</p>";
 				echo "<hr>";
 				
+				$methodsData = []; // Collect method data for the PDF
 				foreach ($reflection->getMethods() as $method) {
-					echo "<h3>Method: {$method->getName()}</h3>";
+					$methodData = [
+						'name' => $method->getName(),
+						'visibility' => $method->isPublic() ? 'Public' : ($method->isProtected() ? 'Protected' : 'Private'),
+						'static' => $method->isStatic() ? 'Yes' : 'No',
+						'returnType' => $method->hasReturnType() ? $method->getReturnType() : 'None',
+					];
+					$methodsData[] = $methodData;
 					
-					// Visibility
-					if ($method->isPublic()) echo "<p><strong>Visibility:</strong> Public</p>";
-					if ($method->isProtected()) echo "<p><strong>Visibility:</strong> Protected</p>";
-					if ($method->isPrivate()) echo "<p><strong>Visibility:</strong> Private</p>";
-					
-					// Static, Abstract, Final
-					if ($method->isStatic()) echo "<p><strong>Static:</strong> Yes</p>";
-					if ($method->isAbstract()) echo "<p><strong>Abstract:</strong> Yes</p>";
-					if ($method->isFinal()) echo "<p><strong>Final:</strong> Yes</p>";
-					
-					// Declaring Class
-					echo "<p><strong>Declared in:</strong> {$method->getDeclaringClass()->getName()}</p>";
-					
-					// Return Type
-					echo "<p><strong>Return Type:</strong> " . ($method->hasReturnType() ? $method->getReturnType() : 'None') . "</p>";
-					
-					// Parameters
-					echo "<p><strong>Parameters:</strong></p>";
-					if ($method->getParameters()) {
-						echo "<ul>";
-						foreach ($method->getParameters() as $parameter) {
-							$details = $parameter->getName();
-							if ($parameter->hasType()) $details .= " (Type: {$parameter->getType()})";
-							if ($parameter->isOptional()) $details .= " [Optional]";
-							if ($parameter->isDefaultValueAvailable()) $details .= " [Default: " . var_export($parameter->getDefaultValue(), true) . "]";
-							if ($parameter->isPassedByReference()) $details .= " [By Reference]";
-							if ($parameter->isVariadic()) $details .= " [Variadic]";
-							echo "<li>{$details}</li>";
-						}
-						echo "</ul>";
-					} else {
-						echo "<p>None</p>";
-					}
-					
-					// Doc Comments
-					$docComment = $method->getDocComment();
-					if ($docComment) {
-						echo "<p><strong>Doc Comment:</strong></p><pre>" . htmlspecialchars($docComment) . "</pre>";
-					}
-					
+					echo "<h3>Method: {$methodData['name']}</h3>";
+					echo "<p><strong>Visibility:</strong> {$methodData['visibility']}</p>";
+					echo "<p><strong>Static:</strong> {$methodData['static']}</p>";
+					echo "<p><strong>Return Type:</strong> {$methodData['returnType']}</p>";
 					echo "<hr>";
 				}
 				
-				// Capture the output
-				$htmlContent = ob_get_clean();
+				$htmlContent = ob_get_clean(); // Get the generated HTML content
 				
-				// Save HTML to file
+				// Save HTML to a file
 				$htmlFileName = "{$className}_Class_Methods.html";
 				file_put_contents($htmlFileName, $htmlContent);
 				
-				// Generate PDF
+				// Generate PDF using FPDF
+				$pdf = new FPDF();
+				$pdf->AddPage();
+				$pdf->SetFont('Arial', 'B', 16);
+				$pdf->Cell(0, 10, "{$className} Class Methods", 0, 1, 'C');
+				$pdf->SetFont('Arial', '', 12);
+				$pdf->Ln(5);
+				
+				foreach ($methodsData as $methodData) {
+					$pdf->Cell(0, 10, "Method: {$methodData['name']}", 0, 1);
+					$pdf->Cell(0, 10, "Visibility: {$methodData['visibility']}", 0, 1);
+					$pdf->Cell(0, 10, "Static: {$methodData['static']}", 0, 1);
+					$pdf->Cell(0, 10, "Return Type: {$methodData['returnType']}", 0, 1);
+					$pdf->Ln(5);
+				}
+				
 				$pdfFileName = "{$className}_Class_Methods.pdf";
-				$dompdf = new Dompdf();
-				$dompdf->loadHtml($htmlContent);
-				$dompdf->setPaper('A4', 'portrait');
-				$dompdf->render();
-				file_put_contents($pdfFileName, $dompdf->output());
+				$pdf->Output('F', $pdfFileName); // Save PDF to a file
 				
 				// Display output and download links
 				echo "<div>";
 				echo "<p><a href='{$htmlFileName}' download>Download as HTML</a></p>";
 				echo "<p><a href='{$pdfFileName}' download>Download as PDF</a></p>";
 				echo "</div>";
+				
 				echo $htmlContent;
 				
 			} catch (ReflectionException $e) {
