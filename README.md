@@ -25,27 +25,11 @@ This module is accessible through a custom link in the REDCap Control Panel, ens
 
 ---
 
-## Installation
-
-1. **Place the Module Files:**
-    - Upload the `ClassInspectorModule` folder to your REDCap `modules/` directory.
-
-2. **Add the Module Link:**
-    - Navigate to the REDCap Control Center.
-    - Add a custom link to the **Class Inspector Module** page using the following steps:
-        1. Go to **Control Center > Custom Links**.
-        2. Add a new link with the following properties:
-            - **Name:** Class Inspector
-            - **URL:** `/modules/ClassInspectorModule/index.php`
-            - **Description:** Reflect on and inspect PHP classes.
-            - **Access Level:** Administrator-only.
-
----
 
 ## How to Use
 
 1. **Navigate to the Class Inspector:**
-    - Log in as an administrator and access the **Class Inspector** link in the REDCap Control Panel.
+    - Log in as an administrator and access the **Check Classes** link in the REDCap Control Panel.
 
 2. **Select a Class:**
     - From the dropdown menu, select the class you want to inspect.
